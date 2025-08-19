@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 # 下载中股数据
 stock_code = '002245'
-data = ef.stock.get_quote_history(stock_code,beg=20240101, end=20250101)
+data = ef.stock.get_quote_history(stock_code, beg='20220101', end='20231231')
 print(data.head())
 
 # 创建DataFrame（只保留收盘价）
