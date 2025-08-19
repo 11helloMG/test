@@ -1,21 +1,23 @@
 import pandas as pd
 import numpy as np
-import yfinance as yf
+import efinance as ef
 import matplotlib.pyplot as plt
 
-# 从Yahoo Finance下载数据
-data = yf.download('AAPL', start='2024-01-01', end='2025-01-01')
+# 下载中股数据
+stock_code = '002245'
+data = ef.stock.get_quote_history(stock_code,beg=20240101, end=20250101)
+print(data.head())
 
 # 创建DataFrame（只保留收盘价）
-df = data[['Close']].copy()
-df.columns = ['Close']
+df = data[['收盘']].copy()
+df.columns = ['收盘']
 
 #止损比例
 stop_loss_pct = 0.05
 
 #计算指标
-df['MA5'] = df['Close'].rolling(5).mean()
-df['MA10'] = df['Close'].rolling(10).mean()
+df['MA5'] = df['收盘'].rolling(5).mean()
+df['MA10'] = df['收盘'].rolling(10).mean()
 
 #初始化信号列
 df['Signal'] = 0
@@ -32,7 +34,7 @@ for i in range(10, len(df)):
         df['Signal'].iloc[i] = 1  # 买入信号
         if not in_position:
             in_position = True
-            entry_price = df['Close'].iloc[i]
+            entry_price = df['收盘'].iloc[i]
             #设置止损
             df['Stop_Loss'].iloc[i] = entry_price * (1 - stop_loss_pct)
 
@@ -44,14 +46,14 @@ for i in range(10, len(df)):
             df['Stop_Loss'].iloc[i] = np.nan
 
     #止损检查
-    if in_position and df['Close'].iloc[i] < df['Stop_Loss'].iloc[i-1]:
+    if in_position and df['收盘'].iloc[i] < df['Stop_Loss'].iloc[i-1]:
         df['Signal'].iloc[i] = -2  # 止损信号
         in_position = False
         df['Stop_Loss'].iloc[i] = np.nan
     
     #跟踪止损
     if in_position:
-        current_stop = df['Close'].iloc[i] * (1 - stop_loss_pct)
+        current_stop = df['收盘'].iloc[i] * (1 - stop_loss_pct)
         df['Stop_Loss'].iloc[i] = max(current_stop, df['Stop_Loss'].iloc[i-1])
     
     #更新持仓状态
@@ -61,16 +63,16 @@ for i in range(10, len(df)):
 plt.figure(figsize=(12, 8))
 
 # 价格曲线
-plt.plot(df['Close'], label='Price', alpha=0.5)
+plt.plot(df['收盘'], label='Price', alpha=0.5)
 plt.plot(df['MA5'], label=f'{5}MA', color='orange')
 plt.plot(df['MA10'], label=f'{10}MA', color='purple')
 
 # 买卖信号
 buy_signals = df[df['Signal'] > 0]
 sell_signals = df[df['Signal'] < 0]
-plt.scatter(buy_signals.index, buy_signals['Close'], 
+plt.scatter(buy_signals.index, buy_signals['收盘'], 
             marker='^', color='r', s=100, label='Buy')
-plt.scatter(sell_signals.index, sell_signals['Close'], 
+plt.scatter(sell_signals.index, sell_signals['收盘'], 
             marker='v', color='g', s=100, label='Sell')
 
 # 止损线
